@@ -1,0 +1,21 @@
+{
+  "name": "my-vue-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.3",
+    "core-js": "^3.8.3",
+    "vue": "^3.2.13",
+    "vue-multiselect": "^3.1.0",
+    "vue-next-select": "^2.10.5",
+    "vue-router": "^4.4.5"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "~5.0.0",
+    "@vue/cli-service": "~5.0.0"
+  }
+}
