@@ -43,6 +43,9 @@
                     <td>{{ game.odds["x"] }}</td>
                     <td>{{ game.odds["2"] }}</td>
                 </tr>
+                <tr v-if="filteredGames.length === 0">
+                    <td colspan="8" class="text-center">No record found</td>
+                </tr>
             </tbody>
         </table>
 
@@ -129,12 +132,22 @@ export default {
     },
     computed: {
         totalPages() {
-            return this.itemsPerPage === 'all' ? 1 : Math.ceil(this.games.length / this.itemsPerPage);
+            return this.itemsPerPage === 'all' ? 1 : Math.ceil(this.filteredGames.length / this.itemsPerPage);
+        },
+        filteredGames() {
+            return this.games.filter(game => {
+                const searchLower = this.searchTerm.toLowerCase();
+                return (
+                    game.team.toLowerCase().includes(searchLower) ||
+                    game.region.toLowerCase().includes(searchLower) ||
+                    game.league.toLowerCase().includes(searchLower)
+                );
+            });
         },
         paginatedGames() {
             const start = (this.currentPage - 1) * this.itemsPerPage;
-            const end = start + (this.itemsPerPage === 'all' ? this.games.length : this.itemsPerPage);
-            return this.games.slice(start, end);
+            const end = start + (this.itemsPerPage === 'all' ? this.filteredGames.length : this.itemsPerPage);
+            return this.filteredGames.slice(start, end);
         }
     },
     mounted() {
