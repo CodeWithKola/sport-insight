@@ -1,59 +1,29 @@
-const axios = require("axios");
-require("dotenv").config();
+const { fetchData, handleResponse } = require("../utils"); //Import utility functions for fetching data and handling responses
 
 exports.getGames = async (req, res) => {
-  const apiUrl = `${process.env.SPORT_API_URL}/football/games`;
-  const token = process.env.SPORT_API_KEY;
+  //Pull out the filter params from the query string
+  //We can filter by region, date range, or specific match code
+  const { region, startDate, endDate, match } = req.query;
 
-  // Extract query params
-  const { region, startDate, endDate, searchTerm, limit, page } = req.query;
-
-  // Building query params
+  //Build query params
   const params = {};
+
+  //Add filters if they were provided in the request
   if (region) params.region = region;
+  if (match) params.match_code = match;
+
+  //If we only get startDate, treat it as a single-day filter
   if (startDate && !endDate) {
-    params.date = startDate; // if endDate is not provided, use startDate as date
+    params.date = startDate; //Use startDate as a single date if endDate is not provided
   }
+  //If we get both dates, set up a date range filter
   if (startDate && endDate) {
     params.start_date = startDate;
     params.end_date = endDate;
   }
+  //Make the API call with our constructed params
+  const result = await fetchData("/football/games", params);
 
-  try {
-    const response = await axios.get(apiUrl, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      params,
-    });
-
-    if (response.data.success) {
-      return res.json(response.data.data);
-    } else {
-      return res.status(400).json({
-        message: "Error fetching data",
-        data: response.data,
-      });
-    }
-  } catch (error) {
-    // Handle error responses from the API
-    if (error.response) {
-      return res.status(error.response.status).json({
-        message: error.response.data.message || "Error fetching data",
-        data: error.response.data,
-      });
-    } else if (error.request) {
-      // No response was received
-      return res.status(500).json({
-        message: "No response received while fetching data",
-        error: error.message,
-      });
-    } else {
-      // Critical issue, Something went wrong
-      return res.status(500).json({
-        message: "A critical error occurred",
-        error: error.message,
-      });
-    }
-  }
+  //Send the filtered games back to the frontend
+  handleResponse(res, result);
 };

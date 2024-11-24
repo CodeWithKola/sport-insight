@@ -1,10 +1,10 @@
 <template>
+    <Header />
     <div class="container">
         <h1>Football</h1>
 
         <div class="tabs">
             <div class="tab active">All games</div>
-            <div class="tab inactive">Completed</div>
         </div>
 
         <div class="filters">
@@ -33,7 +33,12 @@
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="game in paginatedGames" :key="game.match_code" @click="openModal(game)">
+                <tr v-if="isLoading">
+                    <td colspan="8">
+                        <skeleton-loader width="80px" height="20px"></skeleton-loader>
+                    </td>
+                </tr>
+                <tr v-for="game in paginatedGames" :key="game.match_code" @click="openStat(game.match_code)">
                     <td>{{ game.team }}</td>
                     <td>{{ formatDate(game.match_datetime) }}</td>
                     <td>{{ formatTime(game.match_datetime) }}</td>
@@ -43,7 +48,7 @@
                     <td>{{ game.odds["x"] }}</td>
                     <td>{{ game.odds["2"] }}</td>
                 </tr>
-                <tr v-if="filteredGames.length === 0">
+                <tr v-if="!isLoading && filteredGames.length === 0">
                     <td colspan="8" class="text-center">No record found</td>
                 </tr>
             </tbody>
@@ -83,7 +88,6 @@
         </div>
 
 
-
         <div v-if="loading" class="modal d-block" tabindex="-1" role="dialog" aria-modal="true"
             style="background: rgba(0, 0, 0, 0.5);">
             <div class="modal-dialog modal-dialog-centered" role="document">
@@ -97,33 +101,33 @@
             </div>
         </div>
 
-        <MatchDetailModal v-if="isModalOpen" :modalId="'matchDetailModal'" :matchDetails="selectedGame"
-            @close="closeModal" />
     </div>
 </template>
 
 <script>
-import MatchDetailModal from '../components/modals/MatchDetailModal.vue';
 import Multiselect from 'vue-multiselect'
 import axios from 'axios';
 
 import 'vue-multiselect/dist/vue-multiselect.min.css';
-const backendUrl = process.env.VUE_APP_BACKEND_URL || 'http://localhost:5008';
+import Header from "@/components/Header.vue";
+import SkeletonLoader from "@/components/SkeletonLoader.vue";
+const backendUrl = process.env.VUE_APP_BACKEND_URL || 'http://localhost:5008'; //Backend URL for API requests
 
 export default {
     components: {
-        MatchDetailModal,
         Multiselect,
+        Header, //Main page header component
+        SkeletonLoader //Loader component for displaying placeholders while data loads
     },
     data() {
         return {
+            isLoading: true,
             games: [],
             regions: [],
             searchTerm: '',
             startDate: '',
             endDate: '',
             selectedRegion: '',
-            isModalOpen: false,
             selectedGame: {},
             loading: false,
             itemsPerPage: 20,
@@ -131,9 +135,11 @@ export default {
         };
     },
     computed: {
+        //Calculates the total number of pages for paginated games
         totalPages() {
             return this.itemsPerPage === 'all' ? 1 : Math.ceil(this.filteredGames.length / this.itemsPerPage);
         },
+        //Filters games based on the search term
         filteredGames() {
             return this.games.filter(game => {
                 const searchLower = this.searchTerm.toLowerCase();
@@ -144,6 +150,7 @@ export default {
                 );
             });
         },
+        //Returns the current page's games based on pagination
         paginatedGames() {
             const start = (this.currentPage - 1) * this.itemsPerPage;
             const end = start + (this.itemsPerPage === 'all' ? this.filteredGames.length : this.itemsPerPage);
@@ -151,23 +158,24 @@ export default {
         }
     },
     mounted() {
+        //Fetch data from backend when the component is mounted
         this.fetchRegions();
         this.fetchGames();
     },
     methods: {
         async fetchRegions() {
-            this.loading = true;
+            //Fetches available regions from the backend
             try {
                 const response = await axios.get(`${backendUrl}/regions`);
                 this.regions = response.data;
             } catch (error) {
                 console.error("Error fetching regions:", error);
             } finally {
-                this.loading = false;
+
             }
         },
         async fetchGames() {
-            this.loading = true;
+            //Fetches the list of games based on selected filters
             try {
                 const response = await axios.get(`${backendUrl}/games`, {
                     params: {
@@ -182,32 +190,35 @@ export default {
                 console.error("Error fetching games:", error);
             } finally {
                 this.loading = false;
+                this.isLoading = false;
             }
         },
+        //Change the current page for pagination
         changePage(page) {
             if (page > 0 && page <= this.totalPages) {
                 this.currentPage = page;
             }
         },
+        //Reset pagination to the first page when items-per-page changes
         changeItemsPerPage() {
             this.currentPage = 1;
         },
-        openModal(game) {
-            this.selectedGame = game;
-            this.isModalOpen = true;
+        //Navigates to the stats page for a match is clicked
+        openStat(match_code) {
+            this.$router.push({ name: 'Stats', params: { match_code } });
         },
-        closeModal() {
-            this.isModalOpen = false;
-            this.selectedGame = {};
-        },
+        //Triggers a new game fetch with current filters
         filterResults() {
+            this.loading = true;
             this.currentPage = 1;
             this.fetchGames();
         },
+        //Formats datetime string into a readable date
         formatDate(datetime) {
             const date = new Date(datetime);
             return date.toLocaleDateString();
         },
+        //Extracts and formats the time portion of a datetime string
         formatTime(datetime) {
             const time = datetime.split(" ")[1];
             return time.substring(0, 5);
@@ -293,48 +304,11 @@ th {
     background-color: #f9f9f9;
 }
 
-.modal {
-    display: flex;
-    position: fixed;
-    z-index: 1;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgb(0, 0, 0);
-    background-color: rgba(0, 0, 0, 0.4);
-    justify-content: center;
-    align-items: center;
-}
-
-.modal-content {
-    background-color: #fefefe;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
-    max-width: 500px;
-}
-
-.close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-}
-
-.close:hover,
-.close:focus {
-    color: black;
-    text-decoration: none;
+tr {
     cursor: pointer;
 }
 
-
-
 .custom-multiselect {
     height: 40px;
-    /* Set the fixed height */
 }
 </style>

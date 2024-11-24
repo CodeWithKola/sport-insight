@@ -7,12 +7,16 @@
     "build": "vue-cli-service build"
   },
   "dependencies": {
+    "@adyen/lume-vue3": "^1.11.1",
     "bootstrap": "^5.3.3",
+    "chart.js": "^4.4.6",
     "core-js": "^3.8.3",
     "vue": "^3.2.13",
+    "vue-chartjs": "^5.3.2",
     "vue-multiselect": "^3.1.0",
     "vue-next-select": "^2.10.5",
-    "vue-router": "^4.4.5"
+    "vue-router": "^4.4.5",
+    "vue-skeleton-loader": "^1.0.0"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~5.0.0",

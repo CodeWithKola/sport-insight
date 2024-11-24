@@ -17,18 +17,18 @@ app.use(
 
 app.use(express.json());
 
-// Routes
+//Routes
 app.use("/regions", regionsRoutes);
 app.use("/games", gamesRoutes);
 app.use("/stats", statsRoutes);
 
-//Middleware to handle errors
+//Global error-handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send("Opps, something broke!");
 });
 
-const PORT = process.env.PORT || 5008;
+const PORT = process.env.PORT || 5008; //Use the PORT from environment variables or default to 5008
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
